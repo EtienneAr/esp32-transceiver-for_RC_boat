@@ -27,7 +27,7 @@ static const int RX_BUF_SIZE = 1024;
 unsigned long date, mytime, age;
 
 struct GPS_data {
-    bool isGPS;
+    bool isLost;
     unsigned long time;
     float lat, lon;
     float head;
@@ -47,17 +47,19 @@ void GPS_init(void) {
     uart_driver_install(UART_NUM_1, RX_BUF_SIZE * 2, 0, 0, NULL, 0);
 }
 
-static void rx_task(void *arg)
+static void position_task(void *arg)
 {
-    static const char *RX_TASK_TAG = "RX_TASK";
-    esp_log_level_set(RX_TASK_TAG, ESP_LOG_INFO);
-    uint8_t* data = (uint8_t*) malloc(RX_BUF_SIZE+1);
+    uint8_t* ser_data = (uint8_t*) malloc(RX_BUF_SIZE+1);
+
     while (1) {
-        const int rxBytes = uart_read_bytes(UART_NUM_1, data, RX_BUF_SIZE, 1000 / portTICK_RATE_MS);
+        /* Decode GPS data (Serial) */
+        const int rxBytes = uart_read_bytes(UART_NUM_1, ser_data, RX_BUF_SIZE, 1000 / portTICK_RATE_MS);
+        
         for(int i=0;i<rxBytes;i++) {
-        	gps_encode((char) data[i]);
+        	gps_encode((char) ser_data[i]);
         }
 
+        /* Check if a new value is available */
         unsigned long _date, _mytime, _age;
         gps_get_datetime(&_date, &_mytime, &_age);
         if(date != _date || mytime != _mytime || age != _age) {
@@ -65,26 +67,19 @@ static void rx_task(void *arg)
         	mytime = _mytime;
         	age = _age;
 
+            /* Retreive new position */
         	struct GPS_data pos;
-            float temp_age;
+            unsigned long temp_age;
 
         	gps_f_get_position(&(pos.lat), &(pos.lon), &temp_age);
             pos.head = COMPASS_getAngle();;
-            pos.isGPS = temp_age != 0;
+            pos.isLost = temp_age != 0;
             pos.time = mytime;
 
-            wifi_send_data(&pos, sizeof(struct GPS_data));
+            wifi_send_data((uint8_t *) &pos, sizeof(struct GPS_data));
         }
-
-        /*
-        if (rxBytes > 0) {
-            data[rxBytes] = 0;
-            ESP_LOGI(RX_TASK_TAG, "Read %d bytes: '%s'", rxBytes, data);
-            ESP_LOG_BUFFER_HEXDUMP(RX_TASK_TAG, data, rxBytes, ESP_LOG_INFO);
-        }
-        */
     }
-    free(data);
+    free(ser_data);
 }
 
 void app_main(void)
@@ -95,5 +90,5 @@ void app_main(void)
 
     COMPASS_init();
 
-    xTaskCreate(rx_task, "uart_rx_task", 1024*2, NULL, configMAX_PRIORITIES, NULL);
+    xTaskCreate(position_task, "uart_rx_task", 1024*2, NULL, configMAX_PRIORITIES, NULL);
 }
