@@ -26,11 +26,14 @@ static FontxFile myfont[2];
 static char mytext[40];
 
 struct GPS_data {
+    int GPS_count;
     bool isLost;
     unsigned long time;
     float lat, lon;
     float head;
 };
+
+unsigned int prev_GPS_count = -1;
 
 static float o_x=0, o_y=0, c_x=240, c_y=240;
 static float min_x=1000, min_y=1000, max_x=-1000, max_y=-1000;
@@ -49,39 +52,29 @@ static int n_points_last = 0;
 static int n_points = 0;
 
 
-static void wifi_recv_cb(uint8_t src_mac[6], uint8_t *data, int len) {
-    printf("Received : \n");
-    if(len != sizeof(struct GPS_data)) {
-        printf("Wrong len !\n");
-        return;
-    }
-
-    last_receive = esp_timer_get_time();
-
-    struct GPS_data *my_pos = data;
-
+static void add_point(struct GPS_data pos) {
     /* Check if the point is valid */
-    if(my_pos->isLost) {
+    if(pos.isLost) {
         if(n_points > 0) point_list[n_points-1].isGpsLost = true;
         return;
     }
 
     /* Rescale the window if necessary */
-    if(my_pos->lon < min_x) {
+    if(pos.lon < min_x) {
         n_points_last = 0;
-        min_x = my_pos->lon;
+        min_x = pos.lon;
     }
-    if(my_pos->lat < min_y) {
+    if(pos.lat < min_y) {
         n_points_last = 0;
-        min_y = my_pos->lat;
+        min_y = pos.lat;
     }
-    if(my_pos->lon > max_x) {
+    if(pos.lon > max_x) {
         n_points_last = 0;
-        max_x = my_pos->lon;
+        max_x = pos.lon;
     }
-    if(my_pos->lat > max_y) {
+    if(pos.lat > max_y) {
         n_points_last = 0;
-        max_y = my_pos->lat;
+        max_y = pos.lat;
     }
 
     if(n_points_last == 0) {
@@ -96,15 +89,30 @@ static void wifi_recv_cb(uint8_t src_mac[6], uint8_t *data, int len) {
     }
 
     /* add the point to the list */
-    point_list[n_points].x = my_pos->lon;
-    point_list[n_points].y = my_pos->lat;
-    point_list[n_points].theta = my_pos->head;
+    point_list[n_points].x = pos.lon;
+    point_list[n_points].y = pos.lat;
+    point_list[n_points].theta = pos.head;
     point_list[n_points].isWiFiLost = false;
     n_points++;
+}
+
+static void wifi_recv_cb(uint8_t src_mac[6], uint8_t *data, int len) {
+    if(len != sizeof(struct GPS_data)) {
+        printf("Wrong len !\n");
+        return;
+    }
+
+    last_receive = esp_timer_get_time();
+
+    struct GPS_data *my_pos = data;
+
+    printf("Count = %d, IsLost = %s, Time = %ld, Lat = %f, long = %f, heading = %f\n", my_pos->GPS_count, my_pos->isLost ? "true" : "false", my_pos->time, my_pos->lat, my_pos->lon, my_pos->head);
 
 
-    /* Debug */
-    printf("IsLost = %s, Time = %ld, Lat = %f, long = %f, heading = %f\n", my_pos->isLost ? "true" : "false", my_pos->time, my_pos->lat, my_pos->lon, my_pos->head);
+    if(my_pos->GPS_count != prev_GPS_count) {
+        prev_GPS_count = my_pos->GPS_count;
+        add_point(*my_pos);
+    }
 }
 
 static void periodic_timer_callback(void* arg) {

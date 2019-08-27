@@ -24,14 +24,20 @@ static const int RX_BUF_SIZE = 1024;
 #define TXD_PIN (GPIO_NUM_4)
 #define RXD_PIN (GPIO_NUM_34)
 
+#define SEND_PERIOD_MS 100
+
 unsigned long date, mytime, age;
 
 struct GPS_data {
+    int GPS_count;
     bool isLost;
     unsigned long time;
     float lat, lon;
     float head;
 };
+
+static int GPS_count = 0;
+static bool GPS_fixed = false;
 
 void GPS_init(void) {
     const uart_config_t uart_config = {
@@ -50,36 +56,35 @@ void GPS_init(void) {
 static void position_task(void *arg)
 {
     uint8_t* ser_data = (uint8_t*) malloc(RX_BUF_SIZE+1);
+    unsigned long temp_age;
 
     while (1) {
-        /* Decode GPS data (Serial) */
         const int rxBytes = uart_read_bytes(UART_NUM_1, ser_data, RX_BUF_SIZE, 1000 / portTICK_RATE_MS);
         
         for(int i=0;i<rxBytes;i++) {
-        	gps_encode((char) ser_data[i]);
-        }
-
-        /* Check if a new value is available */
-        unsigned long _date, _mytime, _age;
-        gps_get_datetime(&_date, &_mytime, &_age);
-        if(date != _date || mytime != _mytime || age != _age) {
-        	date = _date;
-        	mytime = _mytime;
-        	age = _age;
-
-            /* Retreive new position */
-        	struct GPS_data pos;
-            unsigned long temp_age;
-
-        	gps_f_get_position(&(pos.lat), &(pos.lon), &temp_age);
-            pos.head = COMPASS_getAngle();;
-            pos.isLost = temp_age != 0;
-            pos.time = mytime;
-
-            wifi_send_data((uint8_t *) &pos, sizeof(struct GPS_data));
+        	if(gps_encode((char) ser_data[i])){
+                GPS_count++;
+                gps_get_position(NULL , NULL, &temp_age);
+                GPS_fixed = temp_age == 0;  
+            } 
         }
     }
     free(ser_data);
+}
+
+static void periodic_timer_callback(void* arg) {
+        /* Retreive new position */
+        struct GPS_data pos;
+        unsigned long temp_age;
+
+        gps_f_get_position(&(pos.lat), &(pos.lon), &temp_age);
+        gps_get_datetime(NULL, &(pos.time), NULL);
+        
+        pos.head = COMPASS_getAngle();
+        pos.GPS_count = GPS_count;
+        pos.isLost = !GPS_fixed;
+
+        wifi_send_data(&pos, sizeof(struct GPS_data));
 }
 
 void app_main(void)
@@ -90,5 +95,14 @@ void app_main(void)
 
     COMPASS_init();
 
-    xTaskCreate(position_task, "uart_rx_task", 1024*2, NULL, configMAX_PRIORITIES, NULL);
+    xTaskCreate(position_task, "uart_rx_task", 1024*2, NULL, tskIDLE_PRIORITY, NULL);
+
+    /* Timer to send sensor data */
+    const esp_timer_create_args_t periodic_timer_args = {
+            .callback = &periodic_timer_callback,
+            .name = "wifi_send"
+    };
+    esp_timer_handle_t periodic_timer;
+    ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, SEND_PERIOD_MS * 1000));
 }
