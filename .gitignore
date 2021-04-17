@@ -2,3 +2,5 @@
 receiver/build/
 
 transmitter/build/
+
+receiver/sdkconfig\.old

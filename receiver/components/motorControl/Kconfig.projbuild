@@ -1,0 +1,34 @@
+menu "Motor_Control"
+	
+	config MOTORCONTROL_PIN
+        int "Pin"
+        default 12
+        range 1 34
+        help
+            The pin that will be used to control the main motor.
+
+    config MOTORCONTROL_PERIOD_US
+        int "PWM period (us)"
+        default 20000
+        help
+            Period of the pwm to send to the motor driver.
+
+    config MOTORCONTROL_WIDTH_MAX_US
+        int "PWM max width (us). Correspond to max speed."
+        default 2000
+        help
+            Maximum width (in us) for the pwn to be high.
+
+    config MOTORCONTROL_WIDTH_MID_US
+        int "PWM mid width (us). Correspond to 0 speed."
+        default 1500
+        help
+            Mid width (in us) to output 0 speed.
+
+    config MOTORCONTROL_WIDTH_MIN_US
+        int "PWM min width (us). Correspond to max reversed speed."
+        default 1000
+        help
+            Minimum width (in us) for the pwn to be high.
+
+endmenu

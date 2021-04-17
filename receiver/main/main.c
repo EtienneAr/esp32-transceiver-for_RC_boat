@@ -16,6 +16,7 @@
 #include "tinygps.h"
 
 #include "compass_handler.hpp"
+#include "motorControl.h"
 
 static const int RX_BUF_SIZE = 1024;
 
@@ -89,6 +90,8 @@ static void periodic_timer_callback(void* arg) {
 
 void app_main(void)
 {
+
+    /*
     GPS_init();
 
     wifi_init();
@@ -97,7 +100,7 @@ void app_main(void)
 
     xTaskCreate(position_task, "uart_rx_task", 1024*2, NULL, tskIDLE_PRIORITY, NULL);
 
-    /* Timer to send sensor data */
+    // Timer to send sensor data
     const esp_timer_create_args_t periodic_timer_args = {
             .callback = &periodic_timer_callback,
             .name = "wifi_send"
@@ -105,4 +108,29 @@ void app_main(void)
     esp_timer_handle_t periodic_timer;
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
     ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, SEND_PERIOD_MS * 1000));
+    */
+
+
+    motorControl_init();
+
+    while(true) {
+        motorControl_setSpeed(0);
+        vTaskDelay(1000/portTICK_PERIOD_MS);
+        motorControl_setSpeed(10);
+        vTaskDelay(1000/portTICK_PERIOD_MS);
+        motorControl_setSpeed(20);
+        vTaskDelay(1000/portTICK_PERIOD_MS);
+        motorControl_setSpeed(30);
+        vTaskDelay(1000/portTICK_PERIOD_MS);
+        motorControl_setSpeed(40);
+        vTaskDelay(1000/portTICK_PERIOD_MS);
+        motorControl_setSpeed(-10);
+        vTaskDelay(1000/portTICK_PERIOD_MS);
+        motorControl_setSpeed(10);
+        vTaskDelay(100/portTICK_PERIOD_MS);
+        motorControl_setSpeed(-10);
+        vTaskDelay(1000/portTICK_PERIOD_MS);
+        motorControl_setSpeed(-20);
+        vTaskDelay(1000/portTICK_PERIOD_MS);
+    }
 }
