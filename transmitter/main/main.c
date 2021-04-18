@@ -176,9 +176,9 @@ void app_main(void)
     wifi_datagram_t data;
 
     while(true) {
-        data.speed = sticks_readA() * 2000 / STICKS_VALUEMAX - 1000;
-        data.dir   = sticks_readB() * 2000 / STICKS_VALUEMAX - 1000;
-        data.limit_speed = 75;
+        data.speed = sticks_readJoyA() * 2000 / STICKS_VALUEMAX - 1000;
+        data.dir   = sticks_readJoyB() * 2000 / STICKS_VALUEMAX - 1000;
+        data.limit_speed = sticks_readPotA() * 1000 / STICKS_VALUEMAX;
 
         wifi_datagram_print(&data);
 
