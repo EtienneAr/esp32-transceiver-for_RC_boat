@@ -1,0 +1,17 @@
+menu "Sticks"
+	
+	config STICKS_A_PIN
+        int "Pin"
+        default 34
+        range 34 34
+        help
+            The pin that will be used for stick A analog input.
+
+    config STICKS_B_PIN
+        int "Pin"
+        default 35
+        range 35 35
+        help
+            The pin that will be used for stick B analog input.
+
+endmenu

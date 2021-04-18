@@ -9,6 +9,7 @@
 
 #include "direct_wifi.h"
 #include "screen_handler.h"
+#include "sticks.h"
 
 #include <math.h>
 
@@ -152,6 +153,7 @@ static void periodic_timer_callback(void* arg) {
 
 void app_main(void)
 {
+    /*
     init_screen_handler();
     InitFontx(myfont,"/spiffs/ILGH16XB.FNT",""); // 8x16Dot Gothic
 
@@ -165,4 +167,17 @@ void app_main(void)
     esp_timer_handle_t periodic_timer;
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
     ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, PLOT_FAST_PERIOD));
+    */
+
+    sticks_init(true); //auto trim
+    wifi_init();
+
+    int data[2];
+
+    while(true) {
+        data[0] = sticks_readA() * 200 / STICKS_VALUEMAX - 99;
+        data[1] = sticks_readB() * 200 / STICKS_VALUEMAX - 99;
+        wifi_send_data(uint8_t *data, 2*sizeof(int));
+        vTaskDelay(1 + 1/portTICK_PERIOD_MS);
+    }
 }
