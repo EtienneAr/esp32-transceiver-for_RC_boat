@@ -87,13 +87,28 @@ static void periodic_timer_callback(void* arg) {
         wifi_send_data(&pos, sizeof(struct GPS_data));
 }
 
+#define RANGE_CONST(x, min, max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
+
+void receive_and_control_CB (uint8_t* src_mac[6], uint8_t *data, int len) {
+    if(len == 2*sizeof(int)) {
+        int speed = ((int*) data)[0];
+        int dir =   ((int*) data)[1];
+
+        dir = (dir+100)/2; //[-100;100] => [0, 100]
+
+        speed = RANGE_CONST(speed, -100, 100);
+        dir = RANGE_CONST(dir, 0, 100);
+
+        motorControl_setSpeed(speed);
+        servoControl_setPosition(dir);
+    }
+}
+
 void app_main(void)
 {
 
     /*
     GPS_init();
-
-    wifi_init();
 
     COMPASS_init();
 
@@ -112,21 +127,8 @@ void app_main(void)
 
     motorControl_init();
     servoControl_init();
-    
-    motorControl_setSpeed(0);
 
-    while(true) {
-        servoControl_setPosition(0);
-        vTaskDelay(1000/portTICK_PERIOD_MS);
-        servoControl_setPosition(20);
-        vTaskDelay(1000/portTICK_PERIOD_MS);
-        servoControl_setPosition(40);
-        vTaskDelay(1000/portTICK_PERIOD_MS);
-        servoControl_setPosition(60);
-        vTaskDelay(1000/portTICK_PERIOD_MS);
-        servoControl_setPosition(80);
-        vTaskDelay(1000/portTICK_PERIOD_MS);
-        servoControl_setPosition(100);
-        vTaskDelay(1000/portTICK_PERIOD_MS);
-    }
+    wifi_init();
+
+    wifi_attach_recv_cb(&receive_and_control_CB);
 }

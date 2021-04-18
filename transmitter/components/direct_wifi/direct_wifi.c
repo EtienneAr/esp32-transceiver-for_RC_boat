@@ -56,4 +56,5 @@ void wifi_init() {
     peer.encrypt = false;
     memcpy(peer.peer_addr, s_example_broadcast_mac, ESP_NOW_ETH_ALEN);
     ESP_ERROR_CHECK( esp_now_add_peer(&peer) );
+    ESP_LOGI(WIFI_TAG, "Wifi init done");
   }
