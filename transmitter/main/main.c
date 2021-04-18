@@ -177,7 +177,7 @@ void app_main(void)
     while(true) {
         data[0] = sticks_readA() * 200 / STICKS_VALUEMAX - 99;
         data[1] = sticks_readB() * 200 / STICKS_VALUEMAX - 99;
-        wifi_send_data(uint8_t *data, 2*sizeof(int));
+        wifi_send_data(data, 2*sizeof(int));
         vTaskDelay(1 + 1/portTICK_PERIOD_MS);
     }
 }
