@@ -19,7 +19,7 @@ void servoControl_init() {
 }
 
 void servoControl_setPosition(int pos) {
-	int pulse_width_us = pos * (CONFIG_SERVOCONTROL_WIDTH_MAX_US - CONFIG_SERVOCONTROL_WIDTH_MIN_US) / 100 + CONFIG_SERVOCONTROL_WIDTH_MIN_US;
+	int pulse_width_us = pos * (CONFIG_SERVOCONTROL_WIDTH_MAX_US - CONFIG_SERVOCONTROL_WIDTH_MIN_US) / 1000 + CONFIG_SERVOCONTROL_WIDTH_MIN_US;
 
 	mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_B, pulse_width_us);
 }

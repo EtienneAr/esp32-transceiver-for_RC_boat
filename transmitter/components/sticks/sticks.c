@@ -17,16 +17,16 @@ void sticks_init(bool autoTrimOnCenter) {
 
     if(autoTrimOnCenter) {
     	vTaskDelay(10/portTICK_PERIOD_MS);
-    	long avg_A = 0L, avg_B = 0L;
+    	int avg_A = 0, avg_B = 0;
 
-    	for(int i=0;i<50;i++) {
-    		avg_A += (long) (sticks_readA() - (STICKS_VALUEMAX+1)/2);
-    		avg_B += (long) (sticks_readB() - (STICKS_VALUEMAX+1)/2);
+    	for(int i=0;i<64;i++) {
+    		avg_A += sticks_readA() - STICKS_VALUEMAX/2;
+    		avg_B += sticks_readB() - STICKS_VALUEMAX/2;
     		vTaskDelay(10/portTICK_PERIOD_MS);
     	}
 
-    	trimA = (int) (avg_A/50);
-    	trimB = (int) (avg_B/50);
+    	trimA = avg_A/64;
+    	trimB = avg_B/64;
     }
 }
 

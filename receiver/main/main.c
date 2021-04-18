@@ -18,6 +18,7 @@
 #include "compass_handler.hpp"
 #include "motorControl.h"
 #include "servoControl.h"
+#include "wifi_datagram.h"
 
 static const int RX_BUF_SIZE = 1024;
 
@@ -89,19 +90,20 @@ static void periodic_timer_callback(void* arg) {
 
 #define RANGE_CONST(x, min, max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
 
-void receive_and_control_CB (uint8_t* src_mac[6], uint8_t *data, int len) {
-    if(len == 2*sizeof(int)) {
-        int speed = ((int*) data)[0];
-        int dir =   ((int*) data)[1];
+void receive_and_control_CB (uint8_t* src_mac[6], uint8_t *raw_data, int raw_len) {
+    if(raw_len != sizeof(wifi_datagram_t)) 
+        return;
 
-        dir = (dir+100)/2; //[-100;100] => [0, 100]
+    wifi_datagram_t *data = (wifi_datagram_t *) raw_data;
 
-        speed = RANGE_CONST(speed, -100, 100);
-        dir = RANGE_CONST(dir, 0, 100);
+    data->speed = data->speed * data->limit_speed / 1000; //[-1000;1000] => [-limit;limit]
+    data->dir = (data->dir+1000)/2;                       //[-1000;1000] => [0, 1000]
 
-        motorControl_setSpeed(speed);
-        servoControl_setPosition(dir);
-    }
+    data->speed = RANGE_CONST(data->speed, -data->limit_speed, data->limit_speed);
+    data->dir = RANGE_CONST(data->dir, 0, 1000);
+
+    motorControl_setSpeed(data->speed);
+    servoControl_setPosition(data->dir);
 }
 
 void app_main(void)

@@ -10,6 +10,7 @@
 #include "direct_wifi.h"
 #include "screen_handler.h"
 #include "sticks.h"
+#include "wifi_datagram.h"
 
 #include <math.h>
 
@@ -172,12 +173,16 @@ void app_main(void)
     sticks_init(true); //auto trim
     wifi_init();
 
-    int data[2];
+    wifi_datagram_t data;
 
     while(true) {
-        data[0] = sticks_readA() * 200 / STICKS_VALUEMAX - 99;
-        data[1] = sticks_readB() * 200 / STICKS_VALUEMAX - 99;
-        wifi_send_data(data, 2*sizeof(int));
+        data.speed = sticks_readA() * 2000 / STICKS_VALUEMAX - 1000;
+        data.dir   = sticks_readB() * 2000 / STICKS_VALUEMAX - 1000;
+        data.limit_speed = 75;
+
+        wifi_datagram_print(&data);
+
+        wifi_send_data(&data, sizeof(wifi_datagram_t));
         vTaskDelay(1 + 1/portTICK_PERIOD_MS);
     }
 }
