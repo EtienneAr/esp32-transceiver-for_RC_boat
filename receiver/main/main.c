@@ -17,10 +17,9 @@
 
 #include "compass_handler.hpp"
 #include "motorControl.h"
+#include "servoControl.h"
 
 static const int RX_BUF_SIZE = 1024;
-
-
 
 #define TXD_PIN (GPIO_NUM_4)
 #define RXD_PIN (GPIO_NUM_34)
@@ -112,25 +111,22 @@ void app_main(void)
 
 
     motorControl_init();
+    servoControl_init();
+    
+    motorControl_setSpeed(0);
 
     while(true) {
-        motorControl_setSpeed(0);
+        servoControl_setPosition(0);
         vTaskDelay(1000/portTICK_PERIOD_MS);
-        motorControl_setSpeed(10);
+        servoControl_setPosition(20);
         vTaskDelay(1000/portTICK_PERIOD_MS);
-        motorControl_setSpeed(20);
+        servoControl_setPosition(40);
         vTaskDelay(1000/portTICK_PERIOD_MS);
-        motorControl_setSpeed(30);
+        servoControl_setPosition(60);
         vTaskDelay(1000/portTICK_PERIOD_MS);
-        motorControl_setSpeed(40);
+        servoControl_setPosition(80);
         vTaskDelay(1000/portTICK_PERIOD_MS);
-        motorControl_setSpeed(-10);
-        vTaskDelay(1000/portTICK_PERIOD_MS);
-        motorControl_setSpeed(10);
-        vTaskDelay(100/portTICK_PERIOD_MS);
-        motorControl_setSpeed(-10);
-        vTaskDelay(1000/portTICK_PERIOD_MS);
-        motorControl_setSpeed(-20);
+        servoControl_setPosition(100);
         vTaskDelay(1000/portTICK_PERIOD_MS);
     }
 }

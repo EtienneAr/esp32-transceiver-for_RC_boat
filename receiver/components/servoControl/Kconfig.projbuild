@@ -1,0 +1,28 @@
+menu "Servo_Control"
+	
+	config SERVOCONTROL_PIN
+        int "Pin"
+        default 14
+        range 1 34
+        help
+            The pin that will be used to control the main motor.
+
+    config SERVOCONTROL_PERIOD_US
+        int "PWM period (us)"
+        default 20000
+        help
+            Period of the pwm to send to the motor driver.
+
+    config SERVOCONTROL_WIDTH_MAX_US
+        int "PWM max width (us). Correspond to max position."
+        default 2000
+        help
+            Maximum width (in us) for the pwn to be high.
+
+    config SERVOCONTROL_WIDTH_MIN_US
+        int "PWM min width (us). Correspond to max reversed position."
+        default 1000
+        help
+            Minimum width (in us) for the pwn to be low.
+
+endmenu

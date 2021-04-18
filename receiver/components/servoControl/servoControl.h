@@ -1,13 +1,13 @@
-#ifndef MOTORCONTROL_H
-#define MOTORCONTROL_H
+#ifndef SERVOCONTROL_H
+#define SERVOCONTROL_H
 
 /* SERCOCONTROL and MOTORCONTROL uses the same PWM generator,
  * they can probably interract in ways you don't want !!
  * E.g I suspect that their base frequency is common !
  */
 
-void motorControl_init();
+void servoControl_init();
 
-void motorControl_setSpeed(int speed);
+void servoControl_setPosition(int pos);
 
 #endif
