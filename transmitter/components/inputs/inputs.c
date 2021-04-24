@@ -1,4 +1,4 @@
-#include "sticks.h"
+#include "inputs.h"
 #include <driver/adc.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -6,7 +6,7 @@
 static int trimJoyA = 0;
 static int trimJoyB = 0;
 
-void sticks_init(bool autoTrimJoy) {
+void inputs_init(bool autoTrimJoy) {
     adc1_config_width(ADC_WIDTH_BIT_11);
 	
 	// JoyA stick
@@ -26,8 +26,8 @@ void sticks_init(bool autoTrimJoy) {
     	int avg_A = 0, avg_B = 0;
 
     	for(int i=0;i<64;i++) {
-    		avg_A += sticks_readJoyA() - STICKS_VALUEMAX/2;
-    		avg_B += sticks_readJoyB() - STICKS_VALUEMAX/2;
+    		avg_A += inputs_readJoyA() - INPUTS_VALUEMAX/2;
+    		avg_B += inputs_readJoyB() - INPUTS_VALUEMAX/2;
     		vTaskDelay(10/portTICK_PERIOD_MS);
     	}
 
@@ -36,18 +36,18 @@ void sticks_init(bool autoTrimJoy) {
     }
 }
 
-int sticks_readJoyA() {
+int inputs_readJoyA() {
 	return adc1_get_raw(ADC1_CHANNEL_6) - trimJoyA;
 }
 
-int sticks_readJoyB() {
+int inputs_readJoyB() {
 	return adc1_get_raw(ADC1_CHANNEL_7) - trimJoyB;
 }
 
-int sticks_readPotA() {
+int inputs_readPotA() {
     return adc1_get_raw(ADC1_CHANNEL_4);
 }
 
-int sticks_readPotB() {
+int inputs_readPotB() {
     return adc1_get_raw(ADC1_CHANNEL_5);
 }

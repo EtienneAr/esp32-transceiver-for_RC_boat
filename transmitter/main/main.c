@@ -9,7 +9,7 @@
 
 #include "direct_wifi.h"
 #include "screen_handler.h"
-#include "sticks.h"
+#include "inputs.h"
 #include "wifi_datagram.h"
 #include "myled.h"
 
@@ -33,7 +33,7 @@ static void wifi_recv_cb(uint8_t src_mac[6], uint8_t *data, int len) {
 void app_main(void)
 {
 
-    sticks_init(true); //auto trim
+    inputs_init(true); //auto trim
     wifi_init();
     myled_init();
 
@@ -44,10 +44,10 @@ void app_main(void)
 
     while(true) {
         data.cnt++;
-        data.speed = sticks_readJoyA() * 2000 / STICKS_VALUEMAX - 1000;
-        data.dir   = sticks_readJoyB() * 2000 / STICKS_VALUEMAX - 1000;
-        data.limit_speed = sticks_readPotA() * 1000 / STICKS_VALUEMAX;
-        data.limit_acc   = sticks_readPotB() * 1000 / STICKS_VALUEMAX;
+        data.speed = inputs_readJoyA() * 2000 / INPUTS_VALUEMAX - 1000;
+        data.dir   = inputs_readJoyB() * 2000 / INPUTS_VALUEMAX - 1000;
+        data.limit_speed = inputs_readPotA() * 1000 / INPUTS_VALUEMAX;
+        data.limit_acc   = inputs_readPotB() * 1000 / INPUTS_VALUEMAX;
 
         wifi_datagram_print(&data);
 
