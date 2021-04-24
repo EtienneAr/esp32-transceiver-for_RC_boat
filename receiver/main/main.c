@@ -16,36 +16,57 @@
 
 #define SEND_PERIOD_MS 100
 #define CONTROL_PERIOD_MS 1
+#define CONTROL_WATCHDOG_TIMEOUT 250
 
-static int signal_quality; 
+static float signal_quality;
+static float signal_quality_int; 
 
 static void sensor_callback(void* arg) {
-    signal_quality = 50;
-    wifi_send_data(&signal_quality, sizeof(int));
+    wifi_send_data(&signal_quality_int, sizeof(int));
 }
 
-static wifi_datagram_t last_datagram;
+static wifi_datagram_t control_data;
+static int control_watchdog = 0;
 
 static void control_callback(void* arg) {
-    int speed = last_datagram.speed;
-    int dir = last_datagram.dir;
+    int speed = control_data.speed;
+    int dir = control_data.dir;
 
-    speed = speed * last_datagram.limit_speed / 1000; //[-1000;1000] => [-limit;limit]
+    if(control_watchdog > CONTROL_WATCHDOG_TIMEOUT) {
+        speed = 0;
+    } else {
+        control_watchdog++;
+    }
+
+    speed = speed * control_data.limit_speed / 1000; //[-1000;1000] => [-limit;limit]
     dir = 1000 - (dir+1000)/2;                        //[-1000;1000] => [0, 1000]
 
-    speed = RANGE_CONST(speed, -last_datagram.limit_speed, last_datagram.limit_speed);
+    speed = RANGE_CONST(speed, -control_data.limit_speed, control_data.limit_speed);
     dir = RANGE_CONST(dir, 200, 800); //reduced range for turning
 
     motorControl_setSpeed(speed);
     servoControl_setPosition(dir);
 }
 
+static long lastDatagram_cnt = 0;
 
-void receive_and_control_CB (uint8_t* src_mac[6], uint8_t *raw_data, int raw_len) {
+void receive_callback (uint8_t* src_mac[6], uint8_t *raw_data, int raw_len) {
     if(raw_len != sizeof(wifi_datagram_t)) 
         return;
 
-    memcpy(&last_datagram, raw_data, sizeof(wifi_datagram_t));
+    memcpy(&control_data, raw_data, sizeof(wifi_datagram_t));
+
+    // Signal quality
+    int instant_quality = (int) (((wifi_datagram_t*) raw_data)->cnt - lastDatagram_cnt) - 1;
+    instant_quality = 1000 - instant_quality * 100; // 10 packets dropped => quality = 0
+
+    signal_quality = 0.99f * signal_quality + 0.01f * instant_quality;
+
+    signal_quality_int = (int) signal_quality;
+    lastDatagram_cnt = ((wifi_datagram_t*) raw_data)->cnt;
+
+    // Timeout setup
+    control_watchdog = 0;
 }
 
 void app_main(void)
@@ -55,7 +76,7 @@ void app_main(void)
 
     wifi_init();
 
-    wifi_attach_recv_cb(&receive_and_control_CB);
+    wifi_attach_recv_cb(&receive_callback);
 
 
     // Timer to send sensor data

@@ -21,7 +21,13 @@ static const char *MAIN_TAG = "RC-Test main";
 
 
 static void wifi_recv_cb(uint8_t src_mac[6], uint8_t *data, int len) {
-    
+    if(len != sizeof(int))
+            return;
+
+    int signal_quality = *((int*) data);
+
+    if(signal_quality <=1000 && signal_quality >= 0)
+        myled_display_rg(signal_quality/10);
 }
 
 void app_main(void)
@@ -44,8 +50,6 @@ void app_main(void)
         data.limit_acc   = sticks_readPotB() * 1000 / STICKS_VALUEMAX;
 
         wifi_datagram_print(&data);
-
-        myled_display_rg((data.cnt/10)%100);
 
         wifi_send_data(&data, sizeof(wifi_datagram_t));
         vTaskDelay(1 + 1/portTICK_PERIOD_MS);
