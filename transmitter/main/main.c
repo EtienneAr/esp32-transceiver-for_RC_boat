@@ -11,7 +11,7 @@
 #include "screen_handler.h"
 #include "inputs.h"
 #include "wifi_datagram.h"
-#include "myled.h"
+#include "myleds.h"
 
 #include <math.h>
 
@@ -27,7 +27,7 @@ static void wifi_recv_cb(uint8_t src_mac[6], uint8_t *data, int len) {
     int signal_quality = *((int*) data);
 
     if(signal_quality <=1000 && signal_quality >= 0)
-        myled_display_rg(signal_quality/10);
+        myleds_display_rg(signal_quality/10);
 }
 
 void app_main(void)
@@ -35,7 +35,7 @@ void app_main(void)
 
     inputs_init(true); //auto trim
     wifi_init();
-    myled_init();
+    myleds_init();
 
     wifi_attach_recv_cb(wifi_recv_cb);
 
@@ -48,6 +48,9 @@ void app_main(void)
         data.dir   = inputs_readJoyB() * 2000 / INPUTS_VALUEMAX - 1000;
         data.limit_speed = inputs_readPotA() * 1000 / INPUTS_VALUEMAX;
         data.limit_acc   = inputs_readPotB() * 1000 / INPUTS_VALUEMAX;
+
+        myleds_display_A(inputs_readButtonA());
+        myleds_display_B(inputs_readButtonB());
 
         wifi_datagram_print(&data);
 

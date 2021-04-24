@@ -146,9 +146,20 @@ CONFIG_ESPTOOLPY_MONITOR_BAUD=115200
 # end of Serial flasher config
 
 #
+# Sticks
+#
+CONFIG_JOY_A_PIN=34
+CONFIG_JOY_B_PIN=35
+CONFIG_BUTTON_A_PIN=3
+CONFIG_BUTTON_B_PIN=1
+CONFIG_POT_A_PIN=32
+CONFIG_POT_B_PIN=33
+# end of Sticks
+
+#
 # Leds
 #
-CONFIG_LEDS_PIN=34
+CONFIG_LEDS_PIN=12
 # end of Leds
 
 #
@@ -162,13 +173,6 @@ CONFIG_PARTITION_TABLE_FILENAME="partitions_example.csv"
 CONFIG_PARTITION_TABLE_OFFSET=0x8000
 CONFIG_PARTITION_TABLE_MD5=y
 # end of Partition Table
-
-#
-# Sticks
-#
-CONFIG_STICKS_A_PIN=34
-CONFIG_STICKS_B_PIN=35
-# end of Sticks
 
 #
 # Compiler options

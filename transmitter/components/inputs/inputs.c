@@ -34,6 +34,14 @@ void inputs_init(bool autoTrimJoy) {
     	trimJoyA = avg_A/64;
     	trimJoyB = avg_B/64;
     }
+
+    // Button A
+    gpio_set_direction(CONFIG_BUTTON_A_PIN, GPIO_MODE_INPUT);
+    gpio_pullup_en(CONFIG_BUTTON_A_PIN);
+
+    // Button B
+    gpio_set_direction(CONFIG_BUTTON_B_PIN, GPIO_MODE_INPUT);
+    gpio_pullup_en(CONFIG_BUTTON_B_PIN);
 }
 
 int inputs_readJoyA() {
@@ -50,4 +58,11 @@ int inputs_readPotA() {
 
 int inputs_readPotB() {
     return adc1_get_raw(ADC1_CHANNEL_5);
+}
+
+bool inputs_readButtonA() {
+    return (gpio_get_level(CONFIG_BUTTON_A_PIN) == 0);
+}
+bool inputs_readButtonB() {
+    return (gpio_get_level(CONFIG_BUTTON_B_PIN) == 0);
 }

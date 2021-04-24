@@ -1,16 +1,16 @@
 #include "driver/rmt.h"
 #include "led_strip.h"
 
-#include "myled.h"
+#include "myleds.h"
 
 #define RMT_TX_CHANNEL RMT_CHANNEL_0
-#define LED_NUMBER 1
+#define LED_NUMBER 3
 
 static rmt_config_t config;
 static led_strip_config_t strip_config;
 static led_strip_t *p_strip;
 
-void myled_init() {
+void myleds_init() {
     config.channel = RMT_TX_CHANNEL; // Channel 0
     config.gpio_num = CONFIG_LEDS_PIN; // GPIO
     config.clk_div = 2; // set counter clock to 40MHz
@@ -35,10 +35,20 @@ void myled_init() {
     p_strip = led_strip_new_rmt_ws2812(&strip_config);
 }
 
-void myled_display_rg(int r_percent_g) {
+void myleds_display_rg(int r_percent_g) {
 	unsigned int r = (100-r_percent_g) * 255/100;
 	unsigned int g =      r_percent_g  * 255/100;
 
 	ESP_ERROR_CHECK(p_strip->set_pixel(p_strip, 0, r, g, 0));
+    ESP_ERROR_CHECK(p_strip->refresh(p_strip, 100));
+}
+
+void myleds_display_A(bool isOn) {
+    ESP_ERROR_CHECK(p_strip->set_pixel(p_strip, 1, 0, 0, isOn ? 200 : 0));
+    ESP_ERROR_CHECK(p_strip->refresh(p_strip, 100));
+}
+
+void myleds_display_B(bool isOn) {
+    ESP_ERROR_CHECK(p_strip->set_pixel(p_strip, 2, 0, 0, isOn ? 200 : 0));
     ESP_ERROR_CHECK(p_strip->refresh(p_strip, 100));
 }
