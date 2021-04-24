@@ -97,10 +97,10 @@ void receive_and_control_CB (uint8_t* src_mac[6], uint8_t *raw_data, int raw_len
     wifi_datagram_t *data = (wifi_datagram_t *) raw_data;
 
     data->speed = data->speed * data->limit_speed / 1000; //[-1000;1000] => [-limit;limit]
-    data->dir = (data->dir+1000)/2;                       //[-1000;1000] => [0, 1000]
+    data->dir = 1000 - (data->dir+1000)/2;                       //[-1000;1000] => [0, 1000]
 
     data->speed = RANGE_CONST(data->speed, -data->limit_speed, data->limit_speed);
-    data->dir = RANGE_CONST(data->dir, 0, 1000);
+    data->dir = RANGE_CONST(data->dir, 200, 800); //reduced range for turning
 
     motorControl_setSpeed(data->speed);
     servoControl_setPosition(data->dir);
