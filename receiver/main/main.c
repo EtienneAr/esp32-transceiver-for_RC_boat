@@ -19,7 +19,7 @@
 #define CONTROL_WATCHDOG_TIMEOUT 250
 
 static float signal_quality;
-static float signal_quality_int; 
+static int signal_quality_int; 
 
 static void sensor_callback(void* arg) {
     wifi_send_data(&signal_quality_int, sizeof(int));
@@ -60,7 +60,12 @@ void receive_callback (uint8_t* src_mac[6], uint8_t *raw_data, int raw_len) {
     int instant_quality = (int) (((wifi_datagram_t*) raw_data)->cnt - lastDatagram_cnt) - 1;
     instant_quality = 1000 - instant_quality * 100; // 10 packets dropped => quality = 0
 
-    signal_quality = 0.99f * signal_quality + 0.01f * instant_quality;
+    if(instant_quality < 0) 
+        instant_quality = 0;
+    if(instant_quality > 1000)
+        instant_quality = 1000;
+
+    signal_quality = 0.95f * signal_quality + 0.05f * instant_quality;
 
     signal_quality_int = (int) signal_quality;
     lastDatagram_cnt = ((wifi_datagram_t*) raw_data)->cnt;

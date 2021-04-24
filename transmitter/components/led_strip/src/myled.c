@@ -36,8 +36,8 @@ void myled_init() {
 }
 
 void myled_display_rg(int r_percent_g) {
-	unsigned int r = 	  r_percent_g  * 255/100;
-	unsigned int g = (100-r_percent_g) * 255/100;
+	unsigned int r = (100-r_percent_g) * 255/100;
+	unsigned int g =      r_percent_g  * 255/100;
 
 	ESP_ERROR_CHECK(p_strip->set_pixel(p_strip, 0, r, g, 0));
     ESP_ERROR_CHECK(p_strip->refresh(p_strip, 100));
