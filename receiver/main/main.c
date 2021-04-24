@@ -40,10 +40,15 @@ static void control_callback(void* arg) {
         control_watchdog++;
     }
 
-    speed = speed * control_data.limit_speed / 1000; //[-1000;1000] => [-limit;limit]
+    if( speed > 0) {
+        speed = speed * control_data.limit_speed / 1000;   //[-1000;1000] => [-limit;limit]
+    } else {
+        speed = speed * 2*control_data.limit_speed / 1000; //[-1000;1000] => [-2limit;limit]
+    }
     dir = 1000 - (dir+1000)/2;                        //[-1000;1000] => [0, 1000]
 
-    speed = RANGE_CONST(speed, -control_data.limit_speed, control_data.limit_speed);
+    speed = RANGE_CONST(speed, -1000, 1000);
+    speed = RANGE_CONST(speed, -2*control_data.limit_speed, control_data.limit_speed);
     dir = RANGE_CONST(dir, 200, 800); //reduced range for turning
 
     // Filter speed
