@@ -1,9 +1,3 @@
-/* UART asynchronous example, that uses separate RX and TX tasks
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
@@ -21,28 +15,37 @@
 #define RANGE_CONST(x, min, max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
 
 #define SEND_PERIOD_MS 100
+#define CONTROL_PERIOD_MS 1
 
 static int signal_quality; 
 
-static void periodic_timer_callback(void* arg) {
+static void sensor_callback(void* arg) {
     signal_quality = 50;
     wifi_send_data(&signal_quality, sizeof(int));
 }
+
+static wifi_datagram_t last_datagram;
+
+static void control_callback(void* arg) {
+    int speed = last_datagram.speed;
+    int dir = last_datagram.dir;
+
+    speed = speed * last_datagram.limit_speed / 1000; //[-1000;1000] => [-limit;limit]
+    dir = 1000 - (dir+1000)/2;                        //[-1000;1000] => [0, 1000]
+
+    speed = RANGE_CONST(speed, -last_datagram.limit_speed, last_datagram.limit_speed);
+    dir = RANGE_CONST(dir, 200, 800); //reduced range for turning
+
+    motorControl_setSpeed(speed);
+    servoControl_setPosition(dir);
+}
+
 
 void receive_and_control_CB (uint8_t* src_mac[6], uint8_t *raw_data, int raw_len) {
     if(raw_len != sizeof(wifi_datagram_t)) 
         return;
 
-    wifi_datagram_t *data = (wifi_datagram_t *) raw_data;
-
-    data->speed = data->speed * data->limit_speed / 1000; //[-1000;1000] => [-limit;limit]
-    data->dir = 1000 - (data->dir+1000)/2;                       //[-1000;1000] => [0, 1000]
-
-    data->speed = RANGE_CONST(data->speed, -data->limit_speed, data->limit_speed);
-    data->dir = RANGE_CONST(data->dir, 200, 800); //reduced range for turning
-
-    motorControl_setSpeed(data->speed);
-    servoControl_setPosition(data->dir);
+    memcpy(&last_datagram, raw_data, sizeof(wifi_datagram_t));
 }
 
 void app_main(void)
@@ -56,11 +59,20 @@ void app_main(void)
 
 
     // Timer to send sensor data
-    const esp_timer_create_args_t periodic_timer_args = {
-            .callback = &periodic_timer_callback,
-            .name = "wifi_send"
+    const esp_timer_create_args_t sensor_periodic_timer_args = {
+            .callback = &sensor_callback,
+            .name = "sensor_callback"
     };
-    esp_timer_handle_t periodic_timer;
-    ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
-    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, SEND_PERIOD_MS * 1000));
+    esp_timer_handle_t sensor_periodic_timer;
+    ESP_ERROR_CHECK(esp_timer_create(&sensor_periodic_timer_args, &sensor_periodic_timer));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(sensor_periodic_timer, SEND_PERIOD_MS * 1000));
+
+    // Car control
+    const esp_timer_create_args_t control_periodic_timer_args = {
+            .callback = &control_callback,
+            .name = "sensor_callback"
+    };
+    esp_timer_handle_t control_periodic_timer;
+    ESP_ERROR_CHECK(esp_timer_create(&control_periodic_timer_args, &control_periodic_timer));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(control_periodic_timer, CONTROL_PERIOD_MS * 1000));
 }
