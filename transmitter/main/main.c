@@ -171,24 +171,23 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, PLOT_FAST_PERIOD));
     */
 
-    myled_init();
-
-    int i = 0;
-
     sticks_init(true); //auto trim
     wifi_init();
+    myled_init();
 
     wifi_datagram_t data;
+    data.cnt = 0;
 
     while(true) {
+        data.cnt++;
         data.speed = sticks_readJoyA() * 2000 / STICKS_VALUEMAX - 1000;
         data.dir   = sticks_readJoyB() * 2000 / STICKS_VALUEMAX - 1000;
         data.limit_speed = sticks_readPotA() * 1000 / STICKS_VALUEMAX;
+        data.limit_acc   = sticks_readPotB() * 1000 / STICKS_VALUEMAX;
 
         wifi_datagram_print(&data);
 
-        myled_display_rg(i++);
-        i %= 100;
+        myled_display_rg((data.cnt/10)%100);
 
         wifi_send_data(&data, sizeof(wifi_datagram_t));
         vTaskDelay(1 + 1/portTICK_PERIOD_MS);

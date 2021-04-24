@@ -18,6 +18,9 @@ void sticks_init(bool autoTrimJoy) {
     // PotA stick
     adc1_config_channel_atten(ADC1_CHANNEL_4,ADC_ATTEN_DB_11);
 
+    // PotB stick
+    adc1_config_channel_atten(ADC1_CHANNEL_5,ADC_ATTEN_DB_11);
+
     if(autoTrimJoy) {
     	vTaskDelay(10/portTICK_PERIOD_MS);
     	int avg_A = 0, avg_B = 0;
@@ -43,4 +46,8 @@ int sticks_readJoyB() {
 
 int sticks_readPotA() {
     return adc1_get_raw(ADC1_CHANNEL_4);
+}
+
+int sticks_readPotB() {
+    return adc1_get_raw(ADC1_CHANNEL_5);
 }

@@ -14,4 +14,18 @@ menu "Sticks"
         help
             The pin that will be used for stick B analog input.
 
+    config POT_A_PIN
+        int "Pin"
+        default 32
+        range 32 32
+        help
+            The pin that will be used for potentiometer A analog input.
+
+    config STICKS_B_PIN
+        int "Pin"
+        default 33
+        range 33 33
+        help
+            The pin that will be used for potentiometer B analog input.
+
 endmenu

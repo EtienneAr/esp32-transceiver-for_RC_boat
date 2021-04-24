@@ -11,5 +11,6 @@ int sticks_readJoyA();
 int sticks_readJoyB();
 
 int sticks_readPotA();
+int sticks_readPotB();
 
 #endif
