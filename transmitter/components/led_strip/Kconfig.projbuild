@@ -1,0 +1,10 @@
+menu "Leds"
+	
+	config LEDS_PIN
+        int "Pin"
+        default 12
+        range 1 34
+        help
+            The pin that will be used for driving the ws2812b leds.
+
+endmenu

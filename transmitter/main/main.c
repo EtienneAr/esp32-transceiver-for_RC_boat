@@ -11,6 +11,7 @@
 #include "screen_handler.h"
 #include "sticks.h"
 #include "wifi_datagram.h"
+#include "myled.h"
 
 #include <math.h>
 
@@ -170,6 +171,10 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, PLOT_FAST_PERIOD));
     */
 
+    myled_init();
+
+    int i = 0;
+
     sticks_init(true); //auto trim
     wifi_init();
 
@@ -181,6 +186,9 @@ void app_main(void)
         data.limit_speed = sticks_readPotA() * 1000 / STICKS_VALUEMAX;
 
         wifi_datagram_print(&data);
+
+        myled_display_rg(i++);
+        i %= 100;
 
         wifi_send_data(&data, sizeof(wifi_datagram_t));
         vTaskDelay(1 + 1/portTICK_PERIOD_MS);
