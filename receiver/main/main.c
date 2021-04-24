@@ -16,23 +16,25 @@
 
 #define SEND_PERIOD_MS 100
 #define CONTROL_PERIOD_MS 1
-#define CONTROL_WATCHDOG_TIMEOUT 250
+#define CONTROL_WATCHDOG_TIMEOUT_CNT 250
+#define CONTROL_FULLSPEED_DELAY_CNT 10000
 
-static float signal_quality;
-static int signal_quality_int; 
+static volatile float signal_quality;
+static volatile int signal_quality_int; 
 
 static void sensor_callback(void* arg) {
     wifi_send_data(&signal_quality_int, sizeof(int));
 }
 
-static wifi_datagram_t control_data;
-static int control_watchdog = 0;
+static volatile wifi_datagram_t control_data;
+static volatile int control_watchdog = 0;
+static float speed_filtered = 0;
 
 static void control_callback(void* arg) {
     int speed = control_data.speed;
     int dir = control_data.dir;
 
-    if(control_watchdog > CONTROL_WATCHDOG_TIMEOUT) {
+    if(control_watchdog > CONTROL_WATCHDOG_TIMEOUT_CNT) {
         speed = 0;
     } else {
         control_watchdog++;
@@ -44,7 +46,20 @@ static void control_callback(void* arg) {
     speed = RANGE_CONST(speed, -control_data.limit_speed, control_data.limit_speed);
     dir = RANGE_CONST(dir, 200, 800); //reduced range for turning
 
-    motorControl_setSpeed(speed);
+    // Filter speed
+    float time_to_max = CONTROL_FULLSPEED_DELAY_CNT * (1000. - (float) control_data.limit_acc) / 1000.;
+
+    float max_step = 1000.;
+    if(time_to_max > 0)
+        max_step = 1000. / time_to_max; //=> max / time_to_max
+
+    if((float) speed > speed_filtered + max_step) {
+        speed_filtered += max_step;
+    } else {
+        speed_filtered = (float) speed;
+    }
+
+    motorControl_setSpeed((int) speed_filtered);
     servoControl_setPosition(dir);
 }
 
