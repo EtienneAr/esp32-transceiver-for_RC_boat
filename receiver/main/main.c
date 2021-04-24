@@ -13,82 +13,21 @@
 #include "driver/gpio.h"
 
 #include "direct_wifi.h"
-#include "tinygps.h"
 
-#include "compass_handler.hpp"
 #include "motorControl.h"
 #include "servoControl.h"
 #include "wifi_datagram.h"
 
-static const int RX_BUF_SIZE = 1024;
-
-#define TXD_PIN (GPIO_NUM_4)
-#define RXD_PIN (GPIO_NUM_34)
+#define RANGE_CONST(x, min, max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
 
 #define SEND_PERIOD_MS 100
 
-unsigned long date, mytime, age;
-
-struct GPS_data {
-    int GPS_count;
-    bool isLost;
-    unsigned long time;
-    float lat, lon;
-    float head;
-};
-
-static int GPS_count = 0;
-static bool GPS_fixed = false;
-
-void GPS_init(void) {
-    const uart_config_t uart_config = {
-        .baud_rate = 9600,
-        .data_bits = UART_DATA_8_BITS,
-        .parity = UART_PARITY_DISABLE,
-        .stop_bits = UART_STOP_BITS_1,
-        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE
-    };
-    uart_param_config(UART_NUM_1, &uart_config);
-    uart_set_pin(UART_NUM_1, TXD_PIN, RXD_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-    // We won't use a buffer for sending data.
-    uart_driver_install(UART_NUM_1, RX_BUF_SIZE * 2, 0, 0, NULL, 0);
-}
-
-static void position_task(void *arg)
-{
-    uint8_t* ser_data = (uint8_t*) malloc(RX_BUF_SIZE+1);
-    unsigned long temp_age;
-
-    while (1) {
-        const int rxBytes = uart_read_bytes(UART_NUM_1, ser_data, RX_BUF_SIZE, 1000 / portTICK_RATE_MS);
-        
-        for(int i=0;i<rxBytes;i++) {
-        	if(gps_encode((char) ser_data[i])){
-                GPS_count++;
-                gps_get_position(NULL , NULL, &temp_age);
-                GPS_fixed = temp_age == 0;  
-            } 
-        }
-    }
-    free(ser_data);
-}
+static int signal_quality; 
 
 static void periodic_timer_callback(void* arg) {
-        /* Retreive new position */
-        struct GPS_data pos;
-        unsigned long temp_age;
-
-        gps_f_get_position(&(pos.lat), &(pos.lon), &temp_age);
-        gps_get_datetime(NULL, &(pos.time), NULL);
-        
-        pos.head = COMPASS_getAngle();
-        pos.GPS_count = GPS_count;
-        pos.isLost = !GPS_fixed;
-
-        wifi_send_data(&pos, sizeof(struct GPS_data));
+    signal_quality = 50;
+    wifi_send_data(&signal_quality, sizeof(int));
 }
-
-#define RANGE_CONST(x, min, max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
 
 void receive_and_control_CB (uint8_t* src_mac[6], uint8_t *raw_data, int raw_len) {
     if(raw_len != sizeof(wifi_datagram_t)) 
@@ -108,13 +47,13 @@ void receive_and_control_CB (uint8_t* src_mac[6], uint8_t *raw_data, int raw_len
 
 void app_main(void)
 {
+    motorControl_init();
+    servoControl_init();
 
-    /*
-    GPS_init();
+    wifi_init();
 
-    COMPASS_init();
+    wifi_attach_recv_cb(&receive_and_control_CB);
 
-    xTaskCreate(position_task, "uart_rx_task", 1024*2, NULL, tskIDLE_PRIORITY, NULL);
 
     // Timer to send sensor data
     const esp_timer_create_args_t periodic_timer_args = {
@@ -124,13 +63,4 @@ void app_main(void)
     esp_timer_handle_t periodic_timer;
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
     ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, SEND_PERIOD_MS * 1000));
-    */
-
-
-    motorControl_init();
-    servoControl_init();
-
-    wifi_init();
-
-    wifi_attach_recv_cb(&receive_and_control_CB);
 }
