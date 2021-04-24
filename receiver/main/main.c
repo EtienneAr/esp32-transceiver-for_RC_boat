@@ -17,7 +17,7 @@
 #define SEND_PERIOD_MS 100
 #define CONTROL_PERIOD_MS 1
 #define CONTROL_WATCHDOG_TIMEOUT_CNT 250
-#define CONTROL_FULLSPEED_DELAY_CNT 10000
+#define CONTROL_FULLSPEED_DELAY_CNT 5000
 
 static volatile float signal_quality;
 static volatile int signal_quality_int; 
@@ -58,7 +58,7 @@ static void control_callback(void* arg) {
     if(time_to_max > 0)
         max_step = 1000. / time_to_max; //=> max / time_to_max
 
-    if((float) speed > speed_filtered + max_step) {
+    if(speed > 0 && (float) speed > speed_filtered + max_step) { //Filter the speed only if going forward
         speed_filtered += max_step;
     } else {
         speed_filtered = (float) speed;
