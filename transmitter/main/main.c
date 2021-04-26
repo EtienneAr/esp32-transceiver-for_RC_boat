@@ -25,11 +25,21 @@ typedef enum CurveType {
     X_3 = 2,
     X_4 = 3,
     X_8 = 4,
-    MAX_TYPE = 5,
+    CURVE_MAX_TYPE = 5,
 } CurveType_t;
 
 static CurveType_t curveControl;
 static bool isLogButtonPressed = false;
+
+
+typedef enum AccType {
+    UNLIMITED = 0,
+    LIMITED = 1,
+    ACC_MAX_TYPE = 2,
+} AccType_t;
+
+static AccType_t accControl;
+static bool isAccButtonPressed = false;
 
 float applyCurve(CurveType_t curve, float in) {
     float out = in / 1000.;
@@ -62,6 +72,17 @@ float applyCurve(CurveType_t curve, float in) {
     return (int) out;
 }
 
+int applyAccLim(AccType_t acc, int in) {
+    switch(acc) {
+        case UNLIMITED:
+            return 1000;
+        case LIMITED:
+            return in;
+        default:
+            return in;
+    }
+}
+
 
 static void wifi_recv_cb(uint8_t src_mac[6], uint8_t *data, int len) {
     if(len != sizeof(int))
@@ -92,23 +113,34 @@ void app_main(void)
         /* Data to send */
         data.cnt++;
         data.speed = (int) applyCurve(curveControl, inputs_readJoyA() * 2000 / INPUTS_VALUEMAX - 1000);
-        data.dir   = (int)                          inputs_readJoyB() * 2000 / INPUTS_VALUEMAX - 1000;
-        data.limit_speed = inputs_readPotA() * 1000 / INPUTS_VALUEMAX;
-        data.limit_acc   = inputs_readPotB() * 1000 / INPUTS_VALUEMAX;
+        data.dir   = (int)                          inputs_readJoyB() * 2000 / INPUTS_VALUEMAX - 1000 ;
+        data.limit_speed =                          inputs_readPotA() * 1000 / INPUTS_VALUEMAX ;
+        data.limit_acc   =  applyAccLim(accControl, inputs_readPotB() * 1000 / INPUTS_VALUEMAX);
 
         /* Speed curve control */
         if(inputs_readButtonA()) {
             if(!isLogButtonPressed) {
                 isLogButtonPressed = true;
-                curveControl = (curveControl+1) % MAX_TYPE;
+                curveControl = (curveControl+1) % CURVE_MAX_TYPE;
             }
         } else {
             isLogButtonPressed = false;
         }
 
+        /* Acc limit control */
+        if(inputs_readButtonB()) {
+            if(!isAccButtonPressed) {
+                isAccButtonPressed = true;
+                accControl = (accControl+1) % ACC_MAX_TYPE;
+            }
+        } else {
+            isAccButtonPressed = false;
+        }
+
 
         /* Send and display */
         myleds_display_A(curveControl);
+        myleds_display_B(accControl*4);
 
         wifi_datagram_print(&data);
 
