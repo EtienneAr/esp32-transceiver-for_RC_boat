@@ -7,8 +7,8 @@
 
 void inputs_init(bool autoTrimJoy); //if autotrimmed, init takes ~500ms during which the sticks should be at rest position
 
-int inputs_readJoyA();
-int inputs_readJoyB();
+float inputs_readJoyA();
+float inputs_readJoyB();
 
 int inputs_readPotA();
 int inputs_readPotB();

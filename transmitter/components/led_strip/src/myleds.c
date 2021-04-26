@@ -5,6 +5,7 @@
 
 #define RMT_TX_CHANNEL RMT_CHANNEL_0
 #define LED_NUMBER 3
+#define LED_MAX_INTENSITY 200
 
 static rmt_config_t config;
 static led_strip_config_t strip_config;
@@ -43,12 +44,50 @@ void myleds_display_rg(int r_percent_g) {
     ESP_ERROR_CHECK(p_strip->refresh(p_strip, 100));
 }
 
-void myleds_display_A(bool isOn) {
-    ESP_ERROR_CHECK(p_strip->set_pixel(p_strip, 1, 0, 0, isOn ? 200 : 0));
+void myleds_display_A(int mode) {
+    switch(mode) {
+        case 0:
+            ESP_ERROR_CHECK(p_strip->set_pixel(p_strip, 1, 0, 0, 0));
+            break;
+        case 1:
+            ESP_ERROR_CHECK(p_strip->set_pixel(p_strip, 1, 0, LED_MAX_INTENSITY, 0));
+            break;
+        case 2:
+            ESP_ERROR_CHECK(p_strip->set_pixel(p_strip, 1, LED_MAX_INTENSITY, LED_MAX_INTENSITY, 0));
+            break;
+        case 3:
+            ESP_ERROR_CHECK(p_strip->set_pixel(p_strip, 1, LED_MAX_INTENSITY, 0, 0));
+            break;
+        case 4:
+            ESP_ERROR_CHECK(p_strip->set_pixel(p_strip, 1, 0, 0, LED_MAX_INTENSITY));
+            break;
+        default:
+            ESP_ERROR_CHECK(p_strip->set_pixel(p_strip, 1, LED_MAX_INTENSITY, LED_MAX_INTENSITY, LED_MAX_INTENSITY));
+            break;
+    }
     ESP_ERROR_CHECK(p_strip->refresh(p_strip, 100));
 }
 
-void myleds_display_B(bool isOn) {
-    ESP_ERROR_CHECK(p_strip->set_pixel(p_strip, 2, 0, 0, isOn ? 200 : 0));
+void myleds_display_B(int mode) {
+    switch(mode) {
+        case 0:
+            ESP_ERROR_CHECK(p_strip->set_pixel(p_strip, 2, 0, 0, 0));
+            break;
+        case 1:
+            ESP_ERROR_CHECK(p_strip->set_pixel(p_strip, 2, 0, LED_MAX_INTENSITY, 0));
+            break;
+        case 2:
+            ESP_ERROR_CHECK(p_strip->set_pixel(p_strip, 2, LED_MAX_INTENSITY, LED_MAX_INTENSITY, 0));
+            break;
+        case 3:
+            ESP_ERROR_CHECK(p_strip->set_pixel(p_strip, 2, LED_MAX_INTENSITY, 0, 0));
+            break;
+        case 4:
+            ESP_ERROR_CHECK(p_strip->set_pixel(p_strip, 2, 0, 0, LED_MAX_INTENSITY));
+            break;
+        default:
+            ESP_ERROR_CHECK(p_strip->set_pixel(p_strip, 2, LED_MAX_INTENSITY, LED_MAX_INTENSITY, LED_MAX_INTENSITY));
+            break;
+    }
     ESP_ERROR_CHECK(p_strip->refresh(p_strip, 100));
 }

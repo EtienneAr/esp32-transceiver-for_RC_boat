@@ -3,8 +3,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-static int trimJoyA = 0;
-static int trimJoyB = 0;
+static int trimJoyA = INPUTS_VALUEMAX/2;
+static int trimJoyB = INPUTS_VALUEMAX/2;
+
+static int _inputs_readJoyA_raw();
+static int _inputs_readJoyB_raw();
 
 void inputs_init(bool autoTrimJoy) {
     adc1_config_width(ADC_WIDTH_BIT_11);
@@ -26,13 +29,13 @@ void inputs_init(bool autoTrimJoy) {
     	int avg_A = 0, avg_B = 0;
 
     	for(int i=0;i<64;i++) {
-    		avg_A += inputs_readJoyA() - INPUTS_VALUEMAX/2;
-    		avg_B += inputs_readJoyB() - INPUTS_VALUEMAX/2;
+    		avg_A += _inputs_readJoyA_raw();
+    		avg_B += _inputs_readJoyB_raw();
     		vTaskDelay(10/portTICK_PERIOD_MS);
     	}
 
-    	trimJoyA = avg_A/64;
-    	trimJoyB = avg_B/64;
+    	trimJoyA = (float) avg_A/64;
+    	trimJoyB = (float) avg_B/64;
     }
 
     // Button A
@@ -44,12 +47,32 @@ void inputs_init(bool autoTrimJoy) {
     gpio_pullup_en(CONFIG_BUTTON_B_PIN);
 }
 
-int inputs_readJoyA() {
-	return adc1_get_raw(ADC1_CHANNEL_6) - trimJoyA;
+static int _inputs_readJoyA_raw() {
+    return adc1_get_raw(ADC1_CHANNEL_6);
 }
 
-int inputs_readJoyB() {
-	return adc1_get_raw(ADC1_CHANNEL_7) - trimJoyB;
+float inputs_readJoyA() {
+    float val = (float) _inputs_readJoyA_raw();
+    if(val > trimJoyA) {
+        val = (1. + ((val - trimJoyA) / (INPUTS_VALUEMAX - trimJoyA))) * INPUTS_VALUEMAX / 2.;
+    } else {
+        val = (1. + ((val - trimJoyA) / trimJoyA)) * INPUTS_VALUEMAX / 2.;
+    }
+	return  val;
+}
+
+static int _inputs_readJoyB_raw() {
+    return adc1_get_raw(ADC1_CHANNEL_7);
+}
+
+float inputs_readJoyB() {
+	float val = (float) _inputs_readJoyB_raw();
+    if(val > trimJoyB) {
+        val = (1. + (val - trimJoyB) / (INPUTS_VALUEMAX - trimJoyB)) * INPUTS_VALUEMAX / 2.;
+    } else {
+        val = (1. + (val - trimJoyB) / trimJoyB) * INPUTS_VALUEMAX / 2.;
+    }
+    return  val;
 }
 
 int inputs_readPotA() {

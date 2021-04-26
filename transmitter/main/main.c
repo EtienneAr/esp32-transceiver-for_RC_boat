@@ -19,6 +19,49 @@
 
 static const char *MAIN_TAG = "RC-Test main";
 
+typedef enum CurveType {
+    LINEAR = 0,
+    X_2 = 1,
+    X_3 = 2,
+    X_4 = 3,
+    X_8 = 4,
+    MAX_TYPE = 5,
+} CurveType_t;
+
+static CurveType_t curveControl;
+static bool isLogButtonPressed = false;
+
+float applyCurve(CurveType_t curve, float in) {
+    float out = in / 1000.;
+    int exponent = 0;
+    switch(curve) {
+        case LINEAR:
+            exponent = 1;
+            break;
+        case X_2:
+            exponent = 2;
+            break;
+        case X_3:
+            exponent = 3;
+            break;
+        case X_4:
+            exponent = 4;
+            break;
+        case X_8:
+            exponent = 8;
+            break;
+        default:
+            exponent = 1;
+            break;
+    }
+    out = 1000. * pow(out, exponent);
+
+    if(in < 0 && out > 0)
+        out *= -1;
+    
+    return (int) out;
+}
+
 
 static void wifi_recv_cb(uint8_t src_mac[6], uint8_t *data, int len) {
     if(len != sizeof(int))
@@ -43,18 +86,32 @@ void app_main(void)
     data.cnt = 0;
 
     while(true) {
+        /* Data to send */
         data.cnt++;
-        data.speed = inputs_readJoyA() * 2000 / INPUTS_VALUEMAX - 1000;
-        data.dir   = inputs_readJoyB() * 2000 / INPUTS_VALUEMAX - 1000;
+        data.speed = (int) applyCurve(curveControl, inputs_readJoyA() * 2000 / INPUTS_VALUEMAX - 1000);
+        data.dir   = (int)                          inputs_readJoyB() * 2000 / INPUTS_VALUEMAX - 1000;
         data.limit_speed = inputs_readPotA() * 1000 / INPUTS_VALUEMAX;
         data.limit_acc   = inputs_readPotB() * 1000 / INPUTS_VALUEMAX;
 
-        myleds_display_A(inputs_readButtonA());
-        myleds_display_B(inputs_readButtonB());
+        /* Speed curve control */
+        if(inputs_readButtonA()) {
+            if(!isLogButtonPressed) {
+                isLogButtonPressed = true;
+                curveControl = (curveControl+1) % MAX_TYPE;
+            }
+        } else {
+            isLogButtonPressed = false;
+        }
+
+
+        /* Send and display */
+        myleds_display_A(curveControl);
 
         wifi_datagram_print(&data);
 
         wifi_send_data(&data, sizeof(wifi_datagram_t));
+
+        /* Wait */
         vTaskDelay(1 + 1/portTICK_PERIOD_MS);
     }
 }
