@@ -91,3 +91,17 @@ void myleds_display_B(int mode) {
     }
     ESP_ERROR_CHECK(p_strip->refresh(p_strip, 100));
 }
+
+void myleds_allRed() {
+    for(int i=0;i<LED_NUMBER;i++) {
+        ESP_ERROR_CHECK(p_strip->set_pixel(p_strip, i, LED_MAX_INTENSITY, 0, 0));
+    }
+    ESP_ERROR_CHECK(p_strip->refresh(p_strip, 100));
+}
+
+void myleds_allOff() {
+    for(int i=0;i<LED_NUMBER;i++) {
+        ESP_ERROR_CHECK(p_strip->set_pixel(p_strip, i, 0, 0, 0));
+    }
+    ESP_ERROR_CHECK(p_strip->refresh(p_strip, 100));
+}

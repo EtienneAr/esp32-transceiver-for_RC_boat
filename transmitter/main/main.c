@@ -75,12 +75,15 @@ static void wifi_recv_cb(uint8_t src_mac[6], uint8_t *data, int len) {
 
 void app_main(void)
 {
+    myleds_init();
+    myleds_allRed();
 
     inputs_init(true); //auto trim
     wifi_init();
-    myleds_init();
 
     wifi_attach_recv_cb(wifi_recv_cb);
+
+    myleds_allOff();
 
     wifi_datagram_t data;
     data.cnt = 0;

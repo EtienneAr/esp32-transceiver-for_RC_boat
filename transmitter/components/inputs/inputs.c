@@ -6,8 +6,8 @@
 static int trimJoyA = INPUTS_VALUEMAX/2;
 static int trimJoyB = INPUTS_VALUEMAX/2;
 
-static int _inputs_readJoyA_raw();
-static int _inputs_readJoyB_raw();
+static inline int _inputs_readJoyA_raw() { return adc1_get_raw(ADC1_CHANNEL_6); }
+static inline int _inputs_readJoyB_raw() { return adc1_get_raw(ADC1_CHANNEL_7); }
 
 void inputs_init(bool autoTrimJoy) {
     adc1_config_width(ADC_WIDTH_BIT_11);
@@ -25,17 +25,16 @@ void inputs_init(bool autoTrimJoy) {
     adc1_config_channel_atten(ADC1_CHANNEL_5,ADC_ATTEN_DB_11);
 
     if(autoTrimJoy) {
-    	vTaskDelay(10/portTICK_PERIOD_MS);
-    	int avg_A = 0, avg_B = 0;
+    	int sum_A = 0, sum_B = 0;
 
     	for(int i=0;i<64;i++) {
-    		avg_A += _inputs_readJoyA_raw();
-    		avg_B += _inputs_readJoyB_raw();
+    		sum_A += _inputs_readJoyA_raw();
+    		sum_B += _inputs_readJoyB_raw();
     		vTaskDelay(10/portTICK_PERIOD_MS);
     	}
 
-    	trimJoyA = (float) avg_A/64;
-    	trimJoyB = (float) avg_B/64;
+    	trimJoyA = (float) sum_A/64;
+    	trimJoyB = (float) sum_B/64;
     }
 
     // Button A
@@ -47,10 +46,6 @@ void inputs_init(bool autoTrimJoy) {
     gpio_pullup_en(CONFIG_BUTTON_B_PIN);
 }
 
-static int _inputs_readJoyA_raw() {
-    return adc1_get_raw(ADC1_CHANNEL_6);
-}
-
 float inputs_readJoyA() {
     float val = (float) _inputs_readJoyA_raw();
     if(val > trimJoyA) {
@@ -59,10 +54,6 @@ float inputs_readJoyA() {
         val = (1. + ((val - trimJoyA) / trimJoyA)) * INPUTS_VALUEMAX / 2.;
     }
 	return  val;
-}
-
-static int _inputs_readJoyB_raw() {
-    return adc1_get_raw(ADC1_CHANNEL_7);
 }
 
 float inputs_readJoyB() {
