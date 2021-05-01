@@ -58,8 +58,10 @@ static void control_callback(void* arg) {
     if(time_to_max > 0)
         max_step = 1000. / time_to_max; //=> max / time_to_max
 
-    if(speed > 0 && (float) speed > speed_filtered + max_step) { //Filter the speed only if going forward
+    if(speed > -10 && (float) speed > speed_filtered + max_step) { //Filter the speed only if going forward
         speed_filtered += max_step;
+    } else if(speed > -10 && (float) speed < speed_filtered - max_step) { //Filter the speed only if going forward
+        speed_filtered -= max_step;
     } else {
         speed_filtered = (float) speed;
     }
